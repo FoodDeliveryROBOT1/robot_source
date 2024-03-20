@@ -1,11 +1,8 @@
 import rclpy
-import sys
 from rclpy.node import Node
 from std_msgs.msg import UInt16MultiArray
-from geometry_msgs.msg import Twist, TransformStamped
 from nav_msgs.msg import Odometry
 from tf2_ros import TransformBroadcaster
-from rclpy.time import Time
 from time import time,sleep
 
 import math
@@ -13,8 +10,8 @@ import numpy as np
 import casadi as ca
 from casadi import sin, cos, pi, arctan2
 
-wheel_radius = 0.169/2 # in meters
-D = 0.35 # in meters
+wheel_radius = 0.169/2      # in meters
+D = 0.35                    # in meters
 
 x_init = 0.0
 y_init = 0.0
@@ -59,12 +56,15 @@ class odometry(Node):
         super().__init__('odometry_node')
         self.feedback_sub = self.create_subscription(UInt16MultiArray, 'feedback', self.feedback_callback, 50)
         self.odometry_pub = self.create_publisher(Odometry, '/odom', 10)
-        self.odometry_timer = self.create_timer(0.01, self.odometry_callback)
+        self.odometry_timer = self.create_timer(0.02, self.odometry_callback)   # 50 Hz
         self.tf_broadcaster = TransformBroadcaster(self)
         self.feedback_data = [0, 0]
         self.old_tick = ca.DM([0, 0])
         self.new_tick = ca.DM([0, 0])
+        self.old_tick_2 = ca.DM([0, 0])
+        self.new_tick_2 = ca.DM([0, 0])
         self.diff = ca.DM([0, 0])
+        self.diff_2 = ca.DM([0, 0])
         self.q = [0.0, 0.0, 0.0, 0.0]
         self.ppr = 4096 # tick per revolution
         ## time compare
@@ -109,6 +109,7 @@ class odometry(Node):
         RHS = rot_3d_z @ J @ controls
         self.f = ca.Function('f', [states, controls], [RHS])
         self.u = ca.DM([0.0, 0.0])
+        self.DT = 0.02
 
     def odometry_callback(self):
         odometry_msg = Odometry()
@@ -116,11 +117,26 @@ class odometry(Node):
         odometry_msg.header.frame_id = "odom"
         odometry_msg.child_frame_id = "base_footprint"
         # speed 
-        state_speed = self.f(ca.DM([0.0, 0.0, 0.0]), self.u)
+        
+
+        if (self.first_init == False ):
+            self.diff_2 = self.new_tick - self.old_tick_2
+            for i in range(2):
+                if (self.diff_2[i] > 32768):
+                    self.diff_2[i] = self.diff_2[i] - 65535
+                elif (self.diff_2[i] < -32768):
+                    self.diff_2[i] = self.diff_2[i] + 65535
+            self.u = 2* pi * ca.DM([self.diff_2[0],self.diff_2[1]]) / (self.DT * self.ppr)
+            state_speed = self.f(ca.DM([0.0, 0.0, 0.0]), self.u)
+
+            # update on old state
+            self.old_tick_2 = self.new_tick
+
         odometry_msg.twist.twist.linear.x = float(state_speed[0])
         odometry_msg.twist.twist.linear.y = float(state_speed[1])
         odometry_msg.twist.twist.angular.z = float(state_speed[2])
         # Position 
+
         odometry_msg.pose.pose.position.x = float(self.new_state[0])
         odometry_msg.pose.pose.position.y = float(self.new_state[1])
         odometry_msg.pose.pose.position.z = 0.0
@@ -140,6 +156,10 @@ class odometry(Node):
             self.first_init = False 
             self.new_tick = ca.DM([(tick_msg.data[0]),(tick_msg.data[1])])   ## first init
             self.old_tick = self.new_tick
+
+            ## for derivative
+            self.old_tick2 =  self.new_tick
+
         else :
             # self.new_time = time()
             # print('Total time: ', (self.new_time - self.old_time)*1000)
@@ -153,10 +173,11 @@ class odometry(Node):
                     self.diff[i] = self.diff[i] - 65535
                 elif (self.diff[i] < -32768):
                     self.diff[i] = self.diff[i] + 65535
-            # self.u = 2* pi * ca.DM([self.diff[0],self.diff[1]]) /  DT * self.ppr
+            
             self.new_state = self.shift_timestep(self.old_state,self.diff,self.f)
             self.old_state = self.new_state
-            print(self.new_tick ,'\t',self.diff ,'\t', self.new_state)
+            # print(self.new_tick ,'\t',self.diff ,'\t', self.new_state)
+
             self.old_tick = self.new_tick
             ########
             # self.old_time = self.new_time

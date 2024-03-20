@@ -52,7 +52,7 @@ def generate_launch_description():
     ld.add_action(lidar)
     ld.add_action(can_node)
     ld.add_action(odom_node)
-    # ld.add_action(imu_node)
+    ld.add_action(imu_node)
     ld.add_action(ekf_node)
   
     ld.add_action(use_sim_time_arg)

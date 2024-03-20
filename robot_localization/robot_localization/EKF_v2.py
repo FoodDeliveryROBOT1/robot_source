@@ -6,7 +6,7 @@ from geometry_msgs.msg import Twist, TransformStamped
 from tf2_ros import TransformBroadcaster
 import numpy as np
 import math 
-from time import time,sleep
+from time import time
 
 
 def quaternion_from_euler(ai, aj, ak):
@@ -41,7 +41,7 @@ Q = np.diag([
     np.deg2rad(0.5)
 ]) ** 2  # predict state covariance
  ##             imu_yaw             v           dot_yaw
-R = np.diag([np.deg2rad(5.0), 0.5, 0.5,np.deg2rad(0.1), 1.0, np.deg2rad(1.0)]) ** 2  # Observation yaw covariance
+R = np.diag([np.deg2rad(5.0), 0.5, 0.5,np.deg2rad(0.1), 0.0, np.deg2rad(0.0)]) ** 2  # Observation yaw covariance
 
 
 def map(Input, min_input, max_input, min_output, max_output):
@@ -127,15 +127,15 @@ class odometry_class(Node):
 
     def callback_timer(self):
 
-        print('Total time: ', (self.new_time - self.old_time)*1000)
+        # print('Total time: ', (self.new_time - self.old_time)*1000)
         DT = self.new_time - self.old_time
 
         # self.xTrue, z1, z2, self.xDR, ud = self.observation(self.xTrue, self.xDR, u)  # feedback here <>
 
         self.xEst, self.PEst = self.ekf_estimation(self.xEst, self.PEst, self.z_imu ,self.z_odom , self.u, DT)  # input control here <ud>
         
-        print("------------xEst-------")
-        print(self.xEst)
+        # print("------------xEst-------")
+        # print(self.xEst)
 
         odometry_msg = Odometry()
         odometry_msg.header.stamp = self.get_clock().now().to_msg()
@@ -156,6 +156,7 @@ class odometry_class(Node):
         odometry_msg.pose.pose.orientation.y = self.q[1]
         odometry_msg.pose.pose.orientation.z = self.q[2]
         odometry_msg.pose.pose.orientation.w = self.q[3]
+
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = 'odom'
@@ -163,13 +164,13 @@ class odometry_class(Node):
         t.transform.translation.x = float(self.xEst[0])
         t.transform.translation.y = float(self.xEst[1])
         t.transform.translation.z = 0.0
-        quat = quaternion_from_euler(0.0, 0.0, self.xEst[2])
+        # quat = quaternion_from_euler(0.0, 0.0, self.xEst[2])
         t.transform.rotation.x = self.q[0]
         t.transform.rotation.y = self.q[1]
         t.transform.rotation.z = self.q[2]
         t.transform.rotation.w = self.q[3]
         self.tf_broadcaster.sendTransform(t)
-        self.odometry_pub.publish(odometry_msg)
+
         self.publish_ekf.publish(odometry_msg)
 
 

@@ -115,7 +115,7 @@ class movement(Node):
                     self.get_logger().error('time out on msg recv!')
             feedback_msg = UInt16MultiArray()
             feedback_msg.data = [self.Data[1], self.Data[3]]
-            print(feedback_msg.data)
+            # print(feedback_msg.data)
             self.feedback_pub.publish(feedback_msg)
 
         except can.CanOperationError:
