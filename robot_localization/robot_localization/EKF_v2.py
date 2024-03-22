@@ -34,14 +34,14 @@ def quaternion_from_euler(ai, aj, ak):
 
 # Covariance for EKF simulation
 Q = np.diag([
-    1.0,  # variance of location on x-axis
-    1.0,  # variance of location on y-axis
-    np.deg2rad(3.0),  # variance of yaw angle
+    3.0,  # variance of location on x-axis
+    3.0,  # variance of location on y-axis
+    np.deg2rad(5.0),  # variance of yaw angle
     0.5,  # variance of velocity
     np.deg2rad(0.5)
 ]) ** 2  # predict state covariance
- ##             imu_yaw             v           dot_yaw
-R = np.diag([np.deg2rad(5.0), 0.5, 0.5,np.deg2rad(0.1), 0.0, np.deg2rad(0.0)]) ** 2  # Observation yaw covariance
+ ##             imu_yaw         x    y        yaw       V           dot_yaw
+R = np.diag([np.deg2rad(1.0), 2.0, 2.0,np.deg2rad(5.0), 5.0, np.deg2rad(2.0)]) ** 2  # Observation yaw covariance
 
 
 def map(Input, min_input, max_input, min_output, max_output):
@@ -82,7 +82,6 @@ class odometry_class(Node):
         # print(self.feedback_yaw)
     def odom_callback(self, odom_msg):
         # odom_msg = Odometry()
-        # odom_msg.pose.pose.orientation.
         self.pos_x = odom_msg.pose.pose.position.x
         self.pos_y = odom_msg.pose.pose.position.y
         self.odom_yaw =  euler_from_quaternion(odom_msg.pose.pose.orientation.x, odom_msg.pose.pose.orientation.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w)
@@ -126,14 +125,13 @@ class odometry_class(Node):
         self.old_time = time()
 
     def callback_timer(self):
-
+        self.new_time = time()  # use this to compare time in ros timer
         # print('Total time: ', (self.new_time - self.old_time)*1000)
         DT = self.new_time - self.old_time
 
         # self.xTrue, z1, z2, self.xDR, ud = self.observation(self.xTrue, self.xDR, u)  # feedback here <>
 
         self.xEst, self.PEst = self.ekf_estimation(self.xEst, self.PEst, self.z_imu ,self.z_odom , self.u, DT)  # input control here <ud>
-        
         # print("------------xEst-------")
         # print(self.xEst)
 
@@ -172,6 +170,7 @@ class odometry_class(Node):
         self.tf_broadcaster.sendTransform(t)
 
         self.publish_ekf.publish(odometry_msg)
+        self.old_time = self.new_time
 
 
 

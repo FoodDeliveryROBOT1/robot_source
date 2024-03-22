@@ -65,6 +65,7 @@ class DStarLite:
         self.g = self.create_grid(float("inf"))
         self.detected_obstacles_xy = np.empty((0,2))
         self.initialized = False
+        self.command = 0
         
         
         

@@ -40,16 +40,6 @@ def quaternion_from_euler(ai, aj, ak):
 
     return q
 
-def forward_kinematic(vl, vr):
-    r = 0.169 # m
-    d = 0.32  # m 
-    v = (vr + vl)/2
-    w = (r/(2*d))*(vr - vl)
-    return v, w
-
-def map(Input, min_input, max_input, min_output, max_output):
-    value = ((Input - min_input)*(max_output-min_output)/(max_input - min_input) + min_output)
-    return value
 
 class odometry(Node):
     def __init__(self):
@@ -132,9 +122,9 @@ class odometry(Node):
             # update on old state
             self.old_tick_2 = self.new_tick
 
-        odometry_msg.twist.twist.linear.x = float(state_speed[0])
-        odometry_msg.twist.twist.linear.y = float(state_speed[1])
-        odometry_msg.twist.twist.angular.z = float(state_speed[2])
+            odometry_msg.twist.twist.linear.x = float(state_speed[0])
+            odometry_msg.twist.twist.linear.y = float(state_speed[1])
+            odometry_msg.twist.twist.angular.z = float(state_speed[2])
         # Position 
 
         odometry_msg.pose.pose.position.x = float(self.new_state[0])

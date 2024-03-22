@@ -29,7 +29,8 @@ def generate_launch_description():
     )
     can_node = Node(
         package = 'robot_can',
-        executable = 'can_node'
+        executable = 'can_node',
+        output = 'screen'
     )
     odom_node = Node(
         package = 'robot_wheel_odom',

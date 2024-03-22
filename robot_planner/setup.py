@@ -22,7 +22,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'dstar = robot_planner.dstarlite_scan_V2:main',
+            'dstar = robot_planner.dstarlite_scan:main',
         ],
     },
 )

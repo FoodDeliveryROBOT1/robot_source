@@ -52,7 +52,7 @@ def costmap(data,width,height,resolution):
 
 def obstacle_scale(obx, oby):
     obx_s, oby_s = [], []
-    expan_size =1
+    expan_size = 1
     for k in range(len(obx)):
         for i in range(-expan_size, expan_size + 1):
             for j in range(-expan_size, expan_size + 1):
@@ -67,7 +67,7 @@ def get_distance(scan, angle_min, angel_max, angel_increment, yaw):
         dist = len(scan)
         obx, oby = [], []
         for i in range(dist):
-            if 0 < scan[i] < 2:
+            if 0 < scan[i] < 1.5:
                 angle = angle_min + i*angel_increment
                 x1 = scan[i] * math.cos(angle)
                 y1 = scan[i] * math.sin(angle)
@@ -165,9 +165,10 @@ class Obstacle(Node):
                 y = int(self.dy[i]/self.resolution)+ int((self.sy - self.origin_y)/self.resolution)
                 self.loy.append(y)
             #print(self.lox, "================",self.loy)
-            self.lox, self.loy = obstacle_scale(self.lox, self.loy)
+            # self.lox, self.loy = obstacle_scale(self.lox, self.loy)
             self.stage = 2
             print(self.stage)
+            # print(self.lox)
         
         
 

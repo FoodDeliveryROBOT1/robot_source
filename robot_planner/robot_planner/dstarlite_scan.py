@@ -50,6 +50,19 @@ def costmap(data,width,height,resolution):
     data = data*resolution
     return data
 
+def obstacle_scale(obx, oby):
+    obx_s, oby_s = [], []
+    expan_size =2
+    for k in range(len(obx)):
+        for i in range(-expan_size, expan_size + 1):
+            for j in range(-expan_size, expan_size + 1):
+                if i ==0 and j == 0:
+                    continue
+                x = obx[k] + i
+                y = oby[k] + j
+                obx_s.append(x), oby_s.append(y)
+    return obx_s, oby_s
+
 def get_distance(scan, angle_min, angel_max, angel_increment, yaw):
         dist = len(scan)
         obx, oby = [], []
@@ -64,7 +77,7 @@ def get_distance(scan, angle_min, angel_max, angel_increment, yaw):
         return obx, oby
 
 def pure_pursuit1(current_x, current_y, current_heading,gx,gy, path_x, path_y, index):
-    v = 0.1
+    v = 0.001
     closest_point = None
     for i in range(index, len(path_x)):
         x = path_x[i]
@@ -100,7 +113,7 @@ class Obstacle(Node):
         self.path_pub = self.create_publisher(Path, 'path1', 100)
         self.map_sub = self.create_subscription(OccupancyGrid, "map", self.map_callback, 100)
         self.goal_sub = self.create_subscription(PoseStamped, 'goal_pose', self.goal_callback, 100)
-        self.odom_sub = self.create_subscription(Odometry, 'odom', self.odom_callback, 100)
+        self.odom_sub = self.create_subscription(Odometry, 'odom_ekf', self.odom_callback, 100)
         self.laser_sub = self.create_subscription(LaserScan, '/scan', self.laser_callback, qos_profile)
         self.twist_pub = self.create_publisher(Twist, 'cmd_vel', 100)
         self.path_timer = self.create_timer(0.001, self.path_callback)
@@ -152,7 +165,7 @@ class Obstacle(Node):
                 y = int(self.dy[i]/self.resolution)+ int((self.sy - self.origin_y)/self.resolution)
                 self.loy.append(y)
             #print(self.lox, "================",self.loy)
-    
+            # self.lox, self.loy = obstacle_scale(self.lox, self.loy)
             self.stage = 2
             print(self.stage)
         
@@ -180,11 +193,11 @@ class Obstacle(Node):
                 spoofed_oy = [[], [], [],self.loy]
                 # spoofed_ox = [[], [], [],[1]]
                 # spoofed_oy = [[], [], [],[1]]
-                dstarlite = d_star_lite.DStarLite(self.ox, self.oy)
-                _,x2, y2,x3, y3 = dstarlite.main(d_star_lite.Node_(x=sx, y=sy), d_star_lite.Node_(x=gx, y=gy),
+                dstarlite = DStarLite(self.ox, self.oy)
+                _,x2, y2,x3, y3 = dstarlite.main(Node_(x=sx, y=sy), Node_(x=gx, y=gy),
                                 spoofed_ox=spoofed_ox, spoofed_oy=spoofed_oy)
                 ds = 0.1
-                sp = cubic_spline_planner.CubicSpline2D(x2, y2)
+                sp = CubicSpline2D(x2, y2)
                 s = np.arange(0, sp.s[-1], ds)
                 rx, ry, ryaw, rk = [], [], [], []
                 for i_s in s:
@@ -229,6 +242,7 @@ class Obstacle(Node):
                                                   self.path_x, self.path_y, self.i)
             twist_msg.linear.x = v
             twist_msg.angular.z = angle
+            print(v, angle)
             self.twist_pub.publish(twist_msg)
             print(abs(self.sx - self.path_x[len(self.path_x) - 1]) , '\t', abs(self.sy - self.path_y[len(self.path_y) - 1]))
             if(abs(self.sx - self.path_x[len(self.path_x) - 1])) < 0.05 and abs(self.sy - self.path_y[len(self.path_y) - 1])< 0.05:
