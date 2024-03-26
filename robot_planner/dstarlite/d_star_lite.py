@@ -43,14 +43,10 @@ class DStarLite:
         Node_(-1, -1, math.sqrt(2))
     ]
     def __init__(self, ox: list, oy: list):
-        # self.x_min_world = int(min(ox))
-        # self.y_min_world = int(min(oy))
-        # self.x_max = int(abs(max(ox) - self.x_min_world))
-        # self.y_max = int(abs(max(ox) - self.y_min_world))
-        self.x_min_world = 0
-        self.y_min_world = 0
-        self.x_max = 500
-        self.y_max = 500
+        self.x_min_world = -50
+        self.y_min_world = -50
+        self.x_max = 700
+        self.y_max = 700
         print(self.x_max, self.y_max)
         self.obstacles = [Node_(x - self.x_min_world, y - self.y_min_world) for x, y in zip(ox, oy)]
         self.obstacles_xy = np.array(
@@ -65,7 +61,6 @@ class DStarLite:
         self.g = self.create_grid(float("inf"))
         self.detected_obstacles_xy = np.empty((0,2))
         self.initialized = False
-        self.command = 0
         
         
         

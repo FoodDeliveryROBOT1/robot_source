@@ -18,7 +18,7 @@ import math
 from dstarlite.d_star_lite import *
 from dstarlite.cubic_spline_planner import *
 
-expansion_size = 2
+expansion_size = 3
 lookahead_distance = 0.1
 
 def euler_from_quaternion(x,y,z,w):
@@ -77,7 +77,7 @@ def get_distance(scan, angle_min, angel_max, angel_increment, yaw):
         return obx, oby
 
 def pure_pursuit1(current_x, current_y, current_heading,gx,gy, path_x, path_y, index):
-    v = 0.001
+    v = 0.1
     closest_point = None
     for i in range(index, len(path_x)):
         x = path_x[i]
@@ -98,10 +98,12 @@ def pure_pursuit1(current_x, current_y, current_heading,gx,gy, path_x, path_y, i
         desired_steering_angle -= 2 * math.pi
     elif desired_steering_angle < -math.pi:
         desired_steering_angle += 2 * math.pi
-    if current_x == gx and current_y == gy:
+    if desired_steering_angle > math.pi/6 or desired_steering_angle < -math.pi/6:
+        sign = 1 if desired_steering_angle > 0 else -1
+        desired_steering_angle = sign * math.pi/4
         v = 0.0
 
-    return v, desired_steering_angle, index
+    return v, desired_steering_angle/4, index
 
 
 class Obstacle(Node):

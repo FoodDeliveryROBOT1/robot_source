@@ -18,8 +18,8 @@ def map(Input, min_input, max_input, min_output, max_output):
 
 def inverse_kinematic(vx, w):
 
-    vr = ( 2 / r )*( vx + d * w )
-    vl = ( 2 / r )*( vx - d * w )
+    vr = ( 1 / r )*( 2 * vx + d * w / 2 )   #edit not yet modify
+    vl = ( 1 / r )*( 2 * vx - d * w / 2 )
     
     v1 = int(vl*60/(6.28))# rpm
     v2 = int(vr*60/(6.28))# rpm
@@ -58,8 +58,9 @@ class movement(Node):
         
         
         for i in range(2):
-            self.get_logger().info("%d" % self.wheel_vel[i])
+            # self.get_logger().info("%d" % self.wheel_vel[i])
             self.wheel_mapped_vel[i] =  (self.wheel_vel[i])
+            self.get_logger().info("%d \t %d" % (self.wheel_mapped_vel[0],self.wheel_mapped_vel[1]))
             # self.get_logger().info("%d" % self.wheel_mapped_vel[i])
             # self.wheel_mapped_vel = [0, 0]
            

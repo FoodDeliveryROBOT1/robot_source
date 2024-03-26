@@ -23,6 +23,16 @@ x_init = 0.0
 y_init = 0.0
 theta_init = 0.0
 
+
+# def pi_2_pi(angle):
+#     while(angle > math.pi):
+#         angle = angle - 2.0 * math.pi
+
+#     while(angle < -math.pi):
+#         angle = angle + 2.0 * math.pi
+
+#     return angle
+
 def euler_from_quaternion(x, y, z, w):
     t0 = 2.0 * (w * x + y * z)
     t1 = 1.0 - 2.0 * (x * x + y * y)

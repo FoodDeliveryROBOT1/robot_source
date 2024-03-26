@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import UInt16MultiArray
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Twist, TransformStamped
 from tf2_ros import TransformBroadcaster
 from time import time,sleep
 
@@ -137,6 +138,20 @@ class odometry(Node):
         odometry_msg.pose.pose.orientation.z = self.q[2]
         odometry_msg.pose.pose.orientation.w = self.q[3]
         self.odometry_pub.publish(odometry_msg)
+                
+        # t = TransformStamped()
+        # t.header.stamp = self.get_clock().now().to_msg()
+        # t.header.frame_id = 'odom'
+        # t.child_frame_id =  'base_footprint'
+        # t.transform.translation.x = float(self.xEst[0])
+        # t.transform.translation.y = float(self.xEst[1])
+        # t.transform.translation.z = 0.0
+        # # quat = quaternion_from_euler(0.0, 0.0, self.xEst[2])
+        # t.transform.rotation.x = self.q[0]
+        # t.transform.rotation.y = self.q[1]
+        # t.transform.rotation.z = self.q[2]
+        # t.transform.rotation.w = self.q[3]
+        # self.tf_broadcaster.sendTransform(t)
 
         ########################
         

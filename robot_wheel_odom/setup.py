@@ -20,8 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'robot_odom = robot_wheel_odom.wheel_odom_CF:main',
-            # 'robot_odom = robot_wheel_odom.wheel_odom:main',
+            # 'robot_odom = robot_wheel_odom.wheel_odom_CF:main',
+            'get_yaw_odom = robot_wheel_odom.get_yaw:main',
+            'robot_odom = robot_wheel_odom.wheel_odom:main',
         ],
     },
 )

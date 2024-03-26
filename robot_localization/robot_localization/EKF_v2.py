@@ -8,6 +8,14 @@ import numpy as np
 import math 
 from time import time
 
+# def pi_2_pi(angle):
+#     while(angle > math.pi):
+#         angle = angle - 2.0 * math.pi
+
+#     while(angle < -math.pi):
+#         angle = angle + 2.0 * math.pi
+
+#     return angle
 
 def quaternion_from_euler(ai, aj, ak):
     ai /= 2.0
@@ -34,14 +42,14 @@ def quaternion_from_euler(ai, aj, ak):
 
 # Covariance for EKF simulation
 Q = np.diag([
-    3.0,  # variance of location on x-axis
-    3.0,  # variance of location on y-axis
-    np.deg2rad(5.0),  # variance of yaw angle
-    0.5,  # variance of velocity
-    np.deg2rad(0.5)
+    0.7,  # variance of location on x-axis
+    0.7,  # variance of location on y-axis
+    np.deg2rad(35.0),  # variance of yaw angle about 0.5
+    0.2,  # variance of velocity
+    np.deg2rad(3.0)
 ]) ** 2  # predict state covariance
  ##             imu_yaw         x    y        yaw       V           dot_yaw
-R = np.diag([np.deg2rad(1.0), 2.0, 2.0,np.deg2rad(5.0), 5.0, np.deg2rad(2.0)]) ** 2  # Observation yaw covariance
+R = np.diag([np.deg2rad(1.0), 2.0, 2.0,np.deg2rad(10.0)]) ** 2  # Observation yaw covariance , 5.0, np.deg2rad(10.0)
 
 
 def map(Input, min_input, max_input, min_output, max_output):
@@ -85,10 +93,10 @@ class odometry_class(Node):
         self.pos_x = odom_msg.pose.pose.position.x
         self.pos_y = odom_msg.pose.pose.position.y
         self.odom_yaw =  euler_from_quaternion(odom_msg.pose.pose.orientation.x, odom_msg.pose.pose.orientation.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w)
-        self.yaw = self.odom_yaw
+        self.yaw = self.pi_2_pi(self.odom_yaw)
         self.vx = odom_msg.twist.twist.angular.x
         self.omega = odom_msg.twist.twist.angular.z
-        self.z_odom = np.array([[self.pos_x],[self.pos_y],[self.odom_yaw],[self.vx], [self.omega]])
+        self.z_odom = np.array([[self.pos_x],[self.pos_y],[self.odom_yaw]]) # ,[self.vx], [self.omega]
         # print(self.z_odom)
     
     def control_callback(self, control_msg):
@@ -114,7 +122,7 @@ class odometry_class(Node):
         ##
         self.u = np.array([[0.0], [0.0]])
         self.z_imu = np.array([[0.0]])
-        self.z_odom = np.array([[0.0], [0.0] , [0.0], [0.0], [0.0] ])
+        self.z_odom = np.array([[0.0], [0.0] , [0.0] ]) # , [0.0], [0.0]
 
         self.vx,self.omega,self.feedback_yaw = 0.0,0.0,0.0
         self.pos_x = 0.0
@@ -128,7 +136,7 @@ class odometry_class(Node):
         self.new_time = time()  # use this to compare time in ros timer
         # print('Total time: ', (self.new_time - self.old_time)*1000)
         DT = self.new_time - self.old_time
-
+        # DT = 0.02
         # self.xTrue, z1, z2, self.xDR, ud = self.observation(self.xTrue, self.xDR, u)  # feedback here <>
 
         self.xEst, self.PEst = self.ekf_estimation(self.xEst, self.PEst, self.z_imu ,self.z_odom , self.u, DT)  # input control here <ud>
@@ -139,11 +147,6 @@ class odometry_class(Node):
         odometry_msg.header.stamp = self.get_clock().now().to_msg()
         odometry_msg.header.frame_id = "odom"
         odometry_msg.child_frame_id = "base_footprint"
-        # # speed 
-        # state_speed = self.f(ca.DM([0.0, 0.0, 0.0]), self.u)
-        # odometry_msg.twist.twist.linear.x = float(state_speed[0])
-        # odometry_msg.twist.twist.linear.y = float(state_speed[1])
-        # odometry_msg.twist.twist.angular.z = float(state_speed[2])
         # Position 
         odometry_msg.pose.pose.position.x = float(self.xEst[0])
         odometry_msg.pose.pose.position.y = float(self.xEst[1])
@@ -176,10 +179,10 @@ class odometry_class(Node):
 
     def motion_model(self, x, u, DT): ##  ok
         F = np.array([[1.0, 0, 0, 0, 0],
-                    [0, 1.0, 0, 0, 0],
-                    [0, 0, 1.0, 0, 0],
-                    [0, 0, 0  , 0, 0],
-                    [0, 0, 0  , 0, 0]])
+                      [0, 1.0, 0, 0, 0],
+                      [0, 0, 1.0, 0, 0],
+                      [0, 0, 0  , 0, 0],
+                      [0, 0, 0  , 0, 0]])
 
         B = np.array([[DT * math.cos(x[2, 0]), 0],
                     [DT * math.sin(x[2, 0]), 0],
@@ -188,6 +191,9 @@ class odometry_class(Node):
                     [0.0, 1.0]])
 
         x = F @ x + B @ u
+        
+        # pi 2 pi
+        x[2,0] = self.pi_2_pi(x[2,0])
 
         return x
 
@@ -205,9 +211,7 @@ class odometry_class(Node):
         H = np.array([
             [1, 0, 0, 0, 0],
             [0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1]
+            [0, 0, 1, 0, 0]
         ])
 
         z = H @ x
@@ -230,7 +234,8 @@ class odometry_class(Node):
         dy/dyaw = v*dt*cos(yaw)
         dy/dv = dt*sin(yaw)
         """
-        yaw = x[2, 0]
+        yaw = self.pi_2_pi(x[2, 0])
+        
         v = u[0, 0]
         jF = np.array([
             [1.0, 0.0, -DT * v * math.sin(yaw), DT * math.cos(yaw), 0.0],
@@ -255,9 +260,7 @@ class odometry_class(Node):
         jH = np.array([
             [1, 0, 0, 0, 0],
             [0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1]
+            [0, 0, 1, 0, 0]
         ])
 
         return jH
@@ -286,6 +289,71 @@ class odometry_class(Node):
         xEst = xPred + K @ y
         PEst = (np.eye(len(xEst)) - K @ jH ) @ PPred
         return xEst, PEst
+    
+
+    def pi_2_pi(self, angle):
+        return self.angle_mod(angle)
+
+
+    def angle_mod(self, x, zero_2_2pi=False, degree=False):
+        """
+        Angle modulo operation
+        Default angle modulo range is [-pi, pi)
+
+        Parameters
+        ----------
+        x : float or array_like
+            A angle or an array of angles. This array is flattened for
+            the calculation. When an angle is provided, a float angle is returned.
+        zero_2_2pi : bool, optional
+            Change angle modulo range to [0, 2pi)
+            Default is False.
+        degree : bool, optional
+            If True, then the given angles are assumed to be in degrees.
+            Default is False.
+
+        Returns
+        -------
+        ret : float or ndarray
+            an angle or an array of modulated angle.
+
+        Examples
+        --------
+        >>> angle_mod(-4.0)
+        2.28318531
+
+        >>> angle_mod([-4.0])
+        np.array(2.28318531)
+
+        >>> angle_mod([-150.0, 190.0, 350], degree=True)
+        array([-150., -170.,  -10.])
+
+        >>> angle_mod(-60.0, zero_2_2pi=True, degree=True)
+        array([300.])
+
+        """
+        if isinstance(x, float):
+            is_float = True
+        else:
+            is_float = False
+
+        x = np.asarray(x).flatten()
+        if degree:
+            x = np.deg2rad(x)
+
+        if zero_2_2pi:
+            mod_angle = x % (2 * np.pi)
+        else:
+            mod_angle = (x + np.pi) % (2 * np.pi) - np.pi
+
+        if degree:
+            mod_angle = np.rad2deg(mod_angle)
+
+        if is_float:
+            return mod_angle.item()
+        else:
+            return mod_angle
+        
     
 
 

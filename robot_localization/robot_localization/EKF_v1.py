@@ -2,11 +2,11 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist , TransformStamped
 import numpy as np
 import math
 from time import time,sleep
-
+from tf2_ros import TransformBroadcaster
 # Covariance for EKF simulation
 Q = np.diag([
     10.0,  # variance of location on x-axis
@@ -26,10 +26,43 @@ R2 = np.diag([ 0.01, np.deg2rad(0.1)]) ** 2  # Observation Vx,omega position cov
 # ODOM_NOISE = np.diag([0.05 ,np.deg2rad(1.0)]) ** 2
 
 # DT = 0.02  # time tick [s]
+def euler_from_quaternion(x, y, z, w):
+    t0 = 2.0 * (w * x + y * z)
+    t1 = 1.0 - 2.0 * (x * x + y * y)
+    roll = math.atan2(t0, t1)
+    
+    t2 = 2.0 * (w * y - z * x)
+    t2 = 1.0 if t2 > 1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    pitch = math.asin(t2)
+    
+    t3 = 2.0 * (w * z +x * y)
+    t4 = 1.0 - 2.0*(y * y + z * z)
+    yaw = math.atan2(t3, t4)
+    
+    return yaw
+def quaternion_from_euler(ai, aj, ak):
+    ai /= 2.0
+    aj /= 2.0
+    ak /= 2.0
+    ci = math.cos(ai)
+    si = math.sin(ai)
+    cj = math.cos(aj)
+    sj = math.sin(aj)
+    ck = math.cos(ak)
+    sk = math.sin(ak)
+    cc = ci*ck
+    cs = ci*sk
+    sc = si*ck
+    ss = si*sk
 
-def map(Input, min_input, max_input, min_output, max_output):
-    value = ((Input - min_input)*(max_output-min_output)/(max_input - min_input) + min_output)
-    return value 
+    q = np.empty((4, ))
+    q[0] = cj*sc - sj*cs
+    q[1] = cj*ss + sj*cc
+    q[2] = cj*cs - sj*sc
+    q[3] = cj*cc + sj*ss
+
+    return q
 
 def euler_from_quaternion(x, y, z, w):
     t0 = 2.0 * (w * x + y * z)
@@ -51,11 +84,11 @@ class odometry_class(Node):
     def __init__(self):
         super().__init__('odometry_class')
         self.create_timer = self.create_timer(0.02 ,self.callback_timer)
-        self.imu_subscriber = self.create_subscription(Imu, "/imu", self.imu_callback, 10)
+        self.imu_subscriber = self.create_subscription(Imu, "/hfi_imu", self.imu_callback, 10)
         self.subscribe_wheel_odom = self.create_subscription(Odometry, '/odom',self.odom_callback, 10)
         self.subscribe_twist = self.create_subscription(Twist, '/cmd_vel',self.control_callback, 10)
-
-        self.publish_ekf = self.create_publisher(Twist,'/ekf_msg', 1)
+        self.tf_broadcaster = TransformBroadcaster(self)
+        self.publish_ekf = self.create_publisher(Odometry,'/odom_ekf', 10)
         self.init_ekf()
 
     def imu_callback(self, imu_msg):
@@ -104,31 +137,49 @@ class odometry_class(Node):
         self.new_time = time()
         print('Total time: ', (self.new_time - self.old_time)*1000)
         DT = self.new_time - self.old_time
-        msg = Twist()
+
 
         # self.xTrue, z1, z2, self.xDR, ud = self.observation(self.xTrue, self.xDR, u)  # feedback here <>
 
         self.xEst, self.PEst = self.ekf_estimation(self.xEst, self.PEst, self.z_imu, self.z_odom, self.u, DT)  # input control here <ud>
         
-        print("------------xEst-------")
-        print(self.xEst)
-        # print("------------odom_speed-----------")
-        # print(self.z_odom)
-        # print("------------yaw-----------")
-        # print(self.z_imu)
-        # print("------------control-----------")
-        # print(self.u)
-        # msg.linear.x = self.xEst[0]
-        # msg.linear.y = self.xEst[1]
-        # msg.angular.z = self.xEst[2]
 
-        # self.publish_ekf.publish(msg)
-        # # store data history
-        # self.hxEst = np.hstack((self.hxEst, self.xEst))
-        # self.hxDR = np.hstack((self.hxDR, self.xDR))
-        # self.hxTrue = np.hstack((self.hxTrue, self.xTrue))
-        # self.hz1 = np.hstack((self.hz1, z1))
-        # self.hz2 = np.hstack((self.hz2, z2))
+        odometry_msg = Odometry()
+        odometry_msg.header.stamp = self.get_clock().now().to_msg()
+        odometry_msg.header.frame_id = "odom"
+        odometry_msg.child_frame_id = "base_footprint"
+        # # speed 
+        # state_speed = self.f(ca.DM([0.0, 0.0, 0.0]), self.u)
+        # odometry_msg.twist.twist.linear.x = float(state_speed[0])
+        # odometry_msg.twist.twist.linear.y = float(state_speed[1])
+        # odometry_msg.twist.twist.angular.z = float(state_speed[2])
+        # Position 
+        odometry_msg.pose.pose.position.x = float(self.xEst[0])
+        odometry_msg.pose.pose.position.y = float(self.xEst[1])
+        odometry_msg.pose.pose.position.z = 0.0
+        self.q = quaternion_from_euler(0, 0, self.xEst[2])
+
+        odometry_msg.pose.pose.orientation.x = self.q[0]
+        odometry_msg.pose.pose.orientation.y = self.q[1]
+        odometry_msg.pose.pose.orientation.z = self.q[2]
+        odometry_msg.pose.pose.orientation.w = self.q[3]
+
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = 'odom'
+        t.child_frame_id =  'base_footprint'
+        t.transform.translation.x = float(self.xEst[0])
+        t.transform.translation.y = float(self.xEst[1])
+        t.transform.translation.z = 0.0
+        # quat = quaternion_from_euler(0.0, 0.0, self.xEst[2])
+        t.transform.rotation.x = self.q[0]
+        t.transform.rotation.y = self.q[1]
+        t.transform.rotation.z = self.q[2]
+        t.transform.rotation.w = self.q[3]
+        self.tf_broadcaster.sendTransform(t)
+
+        self.publish_ekf.publish(odometry_msg)
+
         self.old_time = self.new_time
 
 
