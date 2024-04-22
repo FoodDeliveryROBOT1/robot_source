@@ -8,14 +8,19 @@ import numpy as np
 import math 
 from time import time
 
-# def pi_2_pi(angle):
-#     while(angle > math.pi):
-#         angle = angle - 2.0 * math.pi
+# Covariance for EKF simulation
+Q = np.diag([
+    0.1,                   # variance of location on x-axis
+    0.15,                    # variance of location on y-axis
+    np.deg2rad(10.0),       # variance of yaw angle 
+    1.0,                   # variance of velocity
+    np.deg2rad(50.0)        # variance of velocity angle
+]) ** 2  # predict state covariance
 
-#     while(angle < -math.pi):
-#         angle = angle + 2.0 * math.pi
 
-#     return angle
+##             imu_yaw         x    y        yaw            dx ,       dyaw
+R = np.diag([np.deg2rad(1.0), 1.0, 1.3 ,np.deg2rad(7.0) , 0.5, np.deg2rad(15.0)]) ** 2 
+
 
 def quaternion_from_euler(ai, aj, ak):
     ai /= 2.0
@@ -40,16 +45,6 @@ def quaternion_from_euler(ai, aj, ak):
 
     return q
 
-# Covariance for EKF simulation
-Q = np.diag([
-    0.7,  # variance of location on x-axis
-    0.7,  # variance of location on y-axis
-    np.deg2rad(35.0),  # variance of yaw angle about 0.5
-    0.2,  # variance of velocity
-    np.deg2rad(3.0)
-]) ** 2  # predict state covariance
- ##             imu_yaw         x    y        yaw       V           dot_yaw
-R = np.diag([np.deg2rad(1.0), 2.0, 2.0,np.deg2rad(10.0)]) ** 2  # Observation yaw covariance , 5.0, np.deg2rad(10.0)
 
 
 def map(Input, min_input, max_input, min_output, max_output):
@@ -96,18 +91,18 @@ class odometry_class(Node):
         self.yaw = self.pi_2_pi(self.odom_yaw)
         self.vx = odom_msg.twist.twist.angular.x
         self.omega = odom_msg.twist.twist.angular.z
-        self.z_odom = np.array([[self.pos_x],[self.pos_y],[self.odom_yaw]]) # ,[self.vx], [self.omega]
+        self.z_odom = np.array([[self.pos_x],[self.pos_y],[self.odom_yaw], [self.vx], [self.omega]]) # 
         # print(self.z_odom)
     
     def control_callback(self, control_msg):
         # control_msg = Twist()
-        self.u_vx = control_msg.linear.x
+        self.u_vx =  control_msg.linear.x
         self.u_w = control_msg.angular.z
         self.u = np.array([[self.u_vx], [self.u_w]])
 
     def init_ekf(self):
         self.time = 0.0
-        # State Vector [x y yaw v]'
+        # State Vector [x y yaw v w]'
         self.xEst = np.zeros((5, 1))
         self.xTrue = np.zeros((5, 1))
         self.PEst = np.eye(5)
@@ -115,14 +110,14 @@ class odometry_class(Node):
         self.xDR = np.zeros((5, 1))  # Dead reckoning
 
         # history
-        self.hxEst = self.xEst
-        self.hxTrue = self.xTrue
-        self.hxDR = self.xTrue
-        self.hz = np.zeros((3, 1))
+        # self.hxEst = self.xEst
+        # self.hxTrue = self.xTrue
+        # self.hxDR = self.xTrue
+        # self.hz = np.zeros((3, 1))
         ##
         self.u = np.array([[0.0], [0.0]])
         self.z_imu = np.array([[0.0]])
-        self.z_odom = np.array([[0.0], [0.0] , [0.0] ]) # , [0.0], [0.0]
+        self.z_odom = np.array([[0.0], [0.0] , [0.0], [0.0], [0.0] ]) # 
 
         self.vx,self.omega,self.feedback_yaw = 0.0,0.0,0.0
         self.pos_x = 0.0
@@ -211,7 +206,9 @@ class odometry_class(Node):
         H = np.array([
             [1, 0, 0, 0, 0],
             [0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0]
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1]
         ])
 
         z = H @ x
@@ -250,7 +247,7 @@ class odometry_class(Node):
     def jacob_h_imu(self):
         # Jacobian of Observation Model
         jH = np.array([
-            [0, 0, 0, 0, 1]
+            [0, 0, 1, 0, 0]
         ])
 
         return jH
@@ -260,7 +257,9 @@ class odometry_class(Node):
         jH = np.array([
             [1, 0, 0, 0, 0],
             [0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0]
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1]
         ])
 
         return jH

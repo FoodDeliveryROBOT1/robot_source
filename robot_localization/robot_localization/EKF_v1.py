@@ -9,21 +9,17 @@ from time import time,sleep
 from tf2_ros import TransformBroadcaster
 # Covariance for EKF simulation
 Q = np.diag([
-    10.0,  # variance of location on x-axis
-    10.0,  # variance of location on y-axis
-    np.deg2rad(3.0),  # variance of yaw angle
+    0.2,  # variance of location on x-axis
+    0.2,  # variance of location on y-axis
+    np.deg2rad(5.0),  # variance of yaw angle
     0.5,  # variance of velocity
     np.deg2rad(0.5)
 ]) ** 2  # predict state covariance
  ##             yaw             v           dot_yaw
 
-R1 = np.diag([np.deg2rad(0.01)]) ** 2  # Observation yaw covariance
-R2 = np.diag([ 0.01, np.deg2rad(0.1)]) ** 2  # Observation Vx,omega position covariance
+R1 = np.diag([np.deg2rad(1.0)]) ** 2  # Observation yaw covariance
+R2 = np.diag([ 0.01, 0.01, np.deg2rad(0.1)]) ** 2  # Observation Vx,omega position covariance
 
-# #  Simulation parameter
-# INPUT_NOISE = np.diag([0.3, np.deg2rad(1.0)]) ** 2
-# IMU_NOISE = np.diag([np.deg2rad(1.0)]) ** 2
-# ODOM_NOISE = np.diag([0.05 ,np.deg2rad(1.0)]) ** 2
 
 # DT = 0.02  # time tick [s]
 def euler_from_quaternion(x, y, z, w):
@@ -98,9 +94,13 @@ class odometry_class(Node):
         # print(self.feedback_yaw)
     def odom_callback(self, odom_msg):
         # odom_msg = Odometry()
+        self.pos_x = odom_msg.pose.pose.position.x
+        self.pos_y = odom_msg.pose.pose.position.y
+        self.odom_yaw =  euler_from_quaternion(odom_msg.pose.pose.orientation.x, odom_msg.pose.pose.orientation.y, odom_msg.pose.pose.orientation.z, odom_msg.pose.pose.orientation.w)
+        self.yaw = self.pi_2_pi(self.odom_yaw)
         self.vx = odom_msg.twist.twist.angular.x
         self.omega = odom_msg.twist.twist.angular.z
-        self.z_odom = np.array([[self.vx], [self.omega]])
+        self.z_odom = np.array([[self.pos_x],[self.pos_y],[self.odom_yaw]]) # ,[self.vx], [self.omega]
         # print(self.z_odom)
     
     def control_callback(self, control_msg):
@@ -126,7 +126,7 @@ class odometry_class(Node):
         self.hz2 = np.zeros((2, 1))
         ##
         self.u = np.array([[0.0], [0.0]])
-        self.z_odom = np.array([[0.0], [0.0]])
+        self.z_odom = np.array([[0.0], [0.0], [0.0]])
         self.z_imu = np.array([[0.0]])
 
         ## time compare
@@ -225,15 +225,16 @@ class odometry_class(Node):
 
         return z1
 
-    def odom_observation_model(self, x):
-        H2 = np.array([
-            [0, 0, 0, 1.0, 0],
-            [0, 0, 0, 0, 1.0]
+    def odom_observation_model(self,x):
+        H = np.array([
+            [1, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0],
+            [0, 0, 1, 0, 0]
         ])
 
-        z2 = H2 @ x
+        z = H @ x
 
-        return z2
+        return z
 
 
     def jacob_f(self, x, u, DT):
@@ -263,22 +264,23 @@ class odometry_class(Node):
         return jF
 
 
-    def jacob_h1(self):
+    def jacob_h_imu(self):
         # Jacobian of Observation Model
-        jH1 = np.array([
-            [0, 0, 1.0, 0, 0]
+        jH = np.array([
+            [0, 0, 1, 0, 0]
         ])
 
-        return jH1
+        return jH
 
-    def jacob_h2(self):
+    def jacob_h_odom(self):
         # Jacobian of Observation Model
-        jH2 = np.array([
-            [0, 0, 0, 1.0, 0],
-            [0, 0, 0, 0, 1.0]
+        jH = np.array([
+            [1, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0],
+            [0, 0, 1, 0, 0]
         ])
 
-        return jH2
+        return jH
 
     def ekf_estimation(self, xEst, PEst, z1, z2, u,DT):
         #  Predict
@@ -287,8 +289,8 @@ class odometry_class(Node):
         PPred = jF @ PEst @ jF.T + Q
 
         #  Update
-        jH1 = self.jacob_h1()
-        jH2 = self.jacob_h2()
+        jH1 = self.jacob_h_imu()
+        jH2 = self.jacob_h_odom()
         ## imu
         zPred_imu = self.imu_observation_model(xPred)
         y1 = z1 - zPred_imu

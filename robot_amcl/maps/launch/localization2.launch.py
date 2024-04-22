@@ -10,11 +10,11 @@ from launch.actions import DeclareLaunchArgument
 
 def generate_launch_description():
     
-    nav2_yaml = os.path.join(get_package_share_directory('robot_amcl'), 'config', 'nav2_param.yaml')
+    nav2_yaml = os.path.join(get_package_share_directory('robot_amcl'), 'config', 'amcl_param.yaml')
 
     # rviz_config_dir = os.path.join(get_package_share_directory('robot_amcl'), 'config', 'rviz_config.rviz')
 
-    map_file = os.path.join(get_package_share_directory('robot_amcl'), 'maps', 'map_11_april.yaml')
+    map_file = os.path.join(get_package_share_directory('robot_amcl'), 'maps', 'map2.yaml')
 
     remappings = [('/tf', 'tf'),
                     ('/tf_static', 'tf_static')]

@@ -80,8 +80,9 @@ class odometry(Node):
         self.feedback_sub = self.create_subscription(UInt16MultiArray, 'feedback', self.feedback_callback, 10)
         self.imu_sub = self.create_subscription(Imu, "hfi_imu", self.imu_callback,10)
         self.odometry_pub = self.create_publisher(Odometry, '/odom', 10)
-        self.odometry_timer = self.create_timer(0.02, self.odometry_callback)
-        self.tf_broadcaster = TransformBroadcaster(self)
+        self.DT = 0.04
+        self.odometry_timer = self.create_timer(self.DT , self.odometry_callback)
+        # self.tf_broadcaster = TransformBroadcaster(self)
         self.feedback_data = [0, 0]
         self.old_tick = ca.DM([0, 0])
         self.new_tick = ca.DM([0, 0])

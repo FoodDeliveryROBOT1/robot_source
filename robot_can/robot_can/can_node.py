@@ -18,8 +18,8 @@ def map(Input, min_input, max_input, min_output, max_output):
 
 def inverse_kinematic(vx, w):
 
-    vr = ( 1 / r )*( 2 * vx + d * w / 2 )   #edit not yet modify
-    vl = ( 1 / r )*( 2 * vx - d * w / 2 )
+    vr = ( 1 / r )*(  vx + d * w / 2 )   #edit not yet modify
+    vl = ( 1 / r )*(  vx - d * w / 2 )
     
     v1 = int(vl*60/(6.28))# rpm
     v2 = int(vr*60/(6.28))# rpm

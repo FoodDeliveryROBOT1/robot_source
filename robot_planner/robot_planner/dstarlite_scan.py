@@ -19,7 +19,7 @@ from dstarlite.d_star_lite import *
 from dstarlite.cubic_spline_planner import *
 
 expansion_size = 3
-lookahead_distance = 0.1
+lookahead_distance = 0.25
 
 def euler_from_quaternion(x,y,z,w):
     t0 = +2.0 * (w * x + y * z)
@@ -52,7 +52,7 @@ def costmap(data,width,height,resolution):
 
 def obstacle_scale(obx, oby):
     obx_s, oby_s = [], []
-    expan_size =2
+    expan_size = 4
     for k in range(len(obx)):
         for i in range(-expan_size, expan_size + 1):
             for j in range(-expan_size, expan_size + 1):
@@ -67,7 +67,7 @@ def get_distance(scan, angle_min, angel_max, angel_increment, yaw):
         dist = len(scan)
         obx, oby = [], []
         for i in range(dist):
-            if 0 < scan[i] < 2:
+            if 0 < scan[i] < 1.2:
                 angle = angle_min + i*angel_increment
                 x1 = scan[i] * math.cos(angle)
                 y1 = scan[i] * math.sin(angle)
@@ -113,9 +113,10 @@ class Obstacle(Node):
         qos_profile.reliability = QoSReliabilityPolicy.BEST_EFFORT
         qos_profile.durability = QoSDurabilityPolicy.VOLATILE
         self.path_pub = self.create_publisher(Path, 'path1', 100)
-        self.map_sub = self.create_subscription(OccupancyGrid, "map", self.map_callback, 100)
+        self.map_sub = self.create_subscription(OccupancyGrid, "/map", self.map_callback, 100)
         self.goal_sub = self.create_subscription(PoseStamped, 'goal_pose', self.goal_callback, 100)
-        self.odom_sub = self.create_subscription(Odometry, 'odom_ekf', self.odom_callback, 100)
+        #self.odom_sub = self.create_subscription(Odometry, 'odom_ekf', self.odom_callback, 100)
+        self.odom_sub = self.create_subscription(PoseWithCovarianceStamped, 'amcl_pose', self.odom_callback, 100)
         self.laser_sub = self.create_subscription(LaserScan, '/scan', self.laser_callback, qos_profile)
         self.twist_pub = self.create_publisher(Twist, 'cmd_vel', 100)
         self.path_timer = self.create_timer(0.001, self.path_callback)
@@ -127,6 +128,7 @@ class Obstacle(Node):
         self.loy = [1]
         self.ok = 0
         self.i = 0
+        self.sx, self.sy, self.yaw = 0.0, 0.0, 0.0 
         self.v, self.w = 0.0, 0.0
         
 
@@ -135,11 +137,12 @@ class Obstacle(Node):
         self.sy = msg.pose.pose.position.y
         self.yaw = euler_from_quaternion(msg.pose.pose.orientation.x,msg.pose.pose.orientation.y,
         msg.pose.pose.orientation.z,msg.pose.pose.orientation.w)
-        # print(self.sx, self.sy)
+        print(self.sx, self.sy)
 
     def goal_callback(self, msg):
         self.gx = msg.pose.position.x
         self.gy = msg.pose.position.y
+        print(self.gx, self.gy)
         self.ok = 1
 
     def map_callback(self,msg):
@@ -150,6 +153,7 @@ class Obstacle(Node):
         self.height = msg.info.height
         self.data = costmap(msg.data, msg.info.width, msg.info.height, self.resolution)
         self.map_data = [item for i in self.data for item in i]
+        print(self.data)
         self.stage = 1
         print(self.stage)
         
@@ -167,7 +171,7 @@ class Obstacle(Node):
                 y = int(self.dy[i]/self.resolution)+ int((self.sy - self.origin_y)/self.resolution)
                 self.loy.append(y)
             #print(self.lox, "================",self.loy)
-            # self.lox, self.loy = obstacle_scale(self.lox, self.loy)
+            self.lox, self.loy = obstacle_scale(self.lox, self.loy)
             self.stage = 2
             print(self.stage)
         
@@ -252,7 +256,7 @@ class Obstacle(Node):
                 twist_msg.angular.z = 0.0
                 print("STOP")
                 self.twist_pub.publish(twist_msg)
-                self.stage = 0
+                self.stage = 1
                 self.ok = 0
                 
 
