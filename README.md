@@ -25,14 +25,14 @@ Open another terminal
     ```
 - **Run Nonlinear Model Predictive Control NMPC**
   ```sh
-    ros2 run robot_planner nmpc
+  ros2 run robot_planner nmpc
   ```
 
 To visualize the process:
 Open other terminal
 - **Run Rviz**
-- ```sh
-    rviz2
+  ```sh
+  rviz2
   ```
   
     
