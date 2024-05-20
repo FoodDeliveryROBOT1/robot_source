@@ -27,5 +27,12 @@ Open another terminal
   ```sh
     ros2 run robot_planner nmpc
   ```
+
+To visualize the process:
+Open other terminal
+- **Run Rviz**
+- ```sh
+    rviz2
+  ```
   
     
