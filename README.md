@@ -11,10 +11,21 @@ Open the sencode terminal
     ```sh
     ros2 launch robot_can mapping.launch.py
     ```
-Run D* Lite alogithm:
+Run D* Lite alogithm for robot global path planner:
 Open third terminal
 - **Run robot Dstarlite**
   ```sh
   ros2 run robot_planner dstar
   ```
+Run robot path tracking:
+Open another terminal
+- **Run Pure Pursuit Controller**
+    ```sh
+    ros2 run robot_planner pps
+    ```
+- **Run Nonlinear Model Predictive Control NMPC**
+  ```sh
+    ros2 run robot_planner nmpc
+  ```
+  
     
