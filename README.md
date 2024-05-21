@@ -1,4 +1,5 @@
-## Project About the Motion Planning, Control, Localization, and Mapping
+## Project About the Motion Planning, Control, Localization, and Mapping of a differential wheeled mobile robot.
+The project included the process of global path planning with the D* lite algorithm which is the incremental heuristic search best for the dynamic environment, trajectory tracking with two methods (Pure Pursuit Controller and Nonlinear Model Predictive Control NMPC). Mapping Generation using Slam Toolbox. Localization using the Extended Kalman Filter with the Monte Carlo Localization MCL.
 
 Robot Run command:
 Open the first terminal
@@ -8,13 +9,13 @@ Open the first terminal
     ```
 
 Create a map:
-Open the sencode terminal 
+Open the second terminal 
 - **Launch robot mapping:**
     ```sh
     ros2 launch robot_can mapping.launch.py
     ```
-Run D* Lite alogithm for robot global path planner:
-Open third terminal
+Run D* Lite algorithm for robot global path planner:
+Open the third terminal
 - **Run robot Dstarlite**
   ```sh
   ros2 run robot_planner dstar
@@ -31,7 +32,7 @@ Open another terminal
   ```
 
 To visualize the process:
-Open other terminal
+Open another terminal
 - **Run Rviz**
   ```sh
   rviz2
