@@ -39,5 +39,5 @@ Open another terminal
   ```sh
   rviz2
   ```
-  
+
     
