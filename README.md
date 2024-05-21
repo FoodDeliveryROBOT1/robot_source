@@ -1,7 +1,8 @@
 ## Project About the Motion Planning, Control, Localization, and Mapping of a differential wheeled mobile robot.
 The project included the process of global path planning with the D* lite algorithm which is the incremental heuristic search best for the dynamic environment, trajectory tracking with two methods (Pure Pursuit Controller and Nonlinear Model Predictive Control NMPC). Mapping Generation using Slam Toolbox. Localization using the Extended Kalman Filter with the Monte Carlo Localization MCL.
 
-In the command code below using to run for the launch robot controller, Mapping, Localization, Path Planning, and Trajectory Tracking.
+The command code below is used to run for the launch robot controller, Mapping, Localization, Path Planning, and Trajectory Tracking.
+
 Robot Run command:
 Open the first terminal
 - **Launch robot communicate with Motor Driver via CanBus communication, robot localization and turn on the Ydlidar:**
