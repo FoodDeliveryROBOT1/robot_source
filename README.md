@@ -3,7 +3,7 @@ The project included the process of global path planning with the D* lite algori
 
 The command code below is used to run for the launch robot controller, Mapping, Localization, Path Planning, and Trajectory Tracking.
 
-Robot Run command:\\
+Robot Run command:
 Open the first terminal
 - **Launch robot communicate with Motor Driver via CanBus communication, robot localization and turn on the Ydlidar:**
     ```sh
