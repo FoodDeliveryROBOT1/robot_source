@@ -9,6 +9,10 @@ Open the first terminal
     ```sh
     ros2 launch robot_can robot.launch.py
     ```
+After launch the robot, diver will be able to controlled, the lidar will on, and the IMU will works. In this case, the robot can be control through the teleop keyboard. But attention the velocity must be decrease from the 0.5m/s to 0.1m/s.
+    ```sh
+    ros2 run teleop_twist_keyboard teleop_twist_keyboard
+    ```
 
 Create a map:
 Open the second terminal 
