@@ -24,6 +24,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'plot_node = robot_amcl.plot_node:main',
         ],
     },
 )

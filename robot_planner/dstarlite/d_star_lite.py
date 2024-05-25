@@ -43,10 +43,10 @@ class DStarLite:
         Node_(-1, -1, math.sqrt(2))
     ]
     def __init__(self, ox: list, oy: list):
-        self.x_min_world = -50
-        self.y_min_world = -50
-        self.x_max = 700
-        self.y_max = 700
+        self.x_min_world = -10
+        self.y_min_world = -10
+        self.x_max = 1000
+        self.y_max = 1000
         print(self.x_max, self.y_max)
         self.obstacles = [Node_(x - self.x_min_world, y - self.y_min_world) for x, y in zip(ox, oy)]
         self.obstacles_xy = np.array(

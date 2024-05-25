@@ -18,7 +18,7 @@ import math
 from dstarlite.d_star_lite import *
 from dstarlite.cubic_spline_planner import *
 
-expansion_size = 3
+expansion_size = 4
 lookahead_distance = 0.25
 
 def euler_from_quaternion(x,y,z,w):

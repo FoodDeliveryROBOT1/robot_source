@@ -51,7 +51,6 @@ def prediction_state(x0, u, T, N):
     return states
 
 class mpc_controller:
-
     def __init__(self, T, N, r_dim, v_max, omega_max, Q, R):
         self.T = T
         self.N = N

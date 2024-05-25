@@ -12,9 +12,6 @@ def generate_launch_description():
     slam_params_file = LaunchConfiguration('slam_params_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_rviz = LaunchConfiguration('use_rviz')
-
-  
-
     slam_params_file_arg = DeclareLaunchArgument(
         'slam_params_file',
         default_value=os.path.join(
@@ -26,7 +23,6 @@ def generate_launch_description():
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time', default_value='false', description='Use simulation/Gazebo clock'
     )
-
 
     slam_node = Node(
         package='slam_toolbox',

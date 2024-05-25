@@ -146,6 +146,8 @@ class odometry_class(Node):
         odometry_msg.pose.pose.position.x = float(self.xEst[0])
         odometry_msg.pose.pose.position.y = float(self.xEst[1])
         odometry_msg.pose.pose.position.z = 0.0
+        odometry_msg.twist.twist.linear.x = float(self.xEst[3])
+        odometry_msg.twist.twist.angular.z = float(self.xEst[4])
         self.q = quaternion_from_euler(0, 0, self.xEst[2])
 
         odometry_msg.pose.pose.orientation.x = self.q[0]

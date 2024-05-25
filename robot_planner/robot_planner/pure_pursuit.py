@@ -7,7 +7,7 @@ from std_msgs.msg import Int16
 import numpy as np
 import math
 
-lookahead_distance = 0.25
+lookahead_distance = 0.12
 
 def euler_from_quaternion(x,y,z,w):
     t0 = +2.0 * (w * x + y * z)
@@ -123,5 +123,4 @@ def main(args= None):
 
 if __name__ == '__main__':
     main()
-
 

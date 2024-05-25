@@ -61,12 +61,12 @@ class Controller(Node):
 
         self.flag = 0
         
-        self.Q = np.array([[10.0, 0.0, 0.0],[0.0, 10.0, 0.0],[0.0, 0.0, 0.5]])
+        self.Q = np.array([[5.0, 0.0, 0.0],[0.0, 5.0, 0.0],[0.0, 0.0, 5.0]])
 
-        self.R = np.array([[10.0, 0.0], [0.0, 10.0]])
-        self.N = 15
-        self.T = 0.5
-        self.mpc = mpc_controller(self.T,self.N, 0.3,0.1,np.pi/4,self.Q,self.R)
+        self.R = np.array([[2.0, 0.0], [0.0, 4.0]])
+        self.N = 10
+        self.T = 0.2
+        self.mpc = mpc_controller(self.T,self.N, 0.3,0.1,np.pi/12,self.Q,self.R)
         
         self.t0 = 0
         self.x_c = [] # contains for the history of the state
