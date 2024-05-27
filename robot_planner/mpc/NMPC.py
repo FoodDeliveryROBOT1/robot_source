@@ -85,6 +85,7 @@ class mpc_controller:
 
 
         self.opti.subject_to(self.opt_states[0, :] == self.opt_x_ref[0, :])
+        # using the Euler integration method
         for i in range(self.N):
             x_next = self.opt_states[i, :] + f(self.opt_states[i, :], self.opt_controls[i, :]).T * self.T
             self.opti.subject_to(self.opt_states[i+1, :] == x_next)
