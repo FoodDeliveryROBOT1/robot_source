@@ -22,7 +22,7 @@ def euler_from_quaternion(x,y,z,w):
     yaw_z = math.atan2(t3, t4)
     return yaw_z
 
-def pure_pursuit1(current_x, current_y, current_heading, path_x, path_y, index):
+def pure_pursuit(current_x, current_y, current_heading, path_x, path_y, index):
     v = 0.1
     closest_point = None
     for i in range(index, len(path_x)):
@@ -95,7 +95,7 @@ class Controller(Node):
             self.twist_pub.publish(cmd_msg)
         elif self.flag == 1:
             flag_msg = Int16()
-            v, angle, self.i = pure_pursuit1(self.x, self.y, self.yaw,
+            v, angle, self.i = pure_pursuit(self.x, self.y, self.yaw,
                                             self.path_x, self.path_y, self.i)
 
             cmd_msg.linear.x = v
