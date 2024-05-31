@@ -6,7 +6,6 @@ import random
 import time
 from typing import Tuple
 
-p_create_random_obstacle = 0
 class Node_:
     def __init__(self, x: int = 0, y: int = 0, cost: float = 0.0):
         """
@@ -193,23 +192,7 @@ class DStarLite:
                 )
                 )
                 
-            self.spoofed_obstacles.pop(0)
-        # Allow random generation of obstacles
-        random.seed()
-        if random.random() > 1 - p_create_random_obstacle:
-            x = random.randint(0, self.x_max - 1)
-            y = random.randint(0, self.y_max - 1)
-            new_obs = Node_(x, y)
-            if compare_coordinates(new_obs, self.start) or compare_coordinates(new_obs, self.goal):
-                return changed_vertices
-            changed_vertices.append(Node_(x, y))
-            self.detected_obstacles_xy = np.concatenate(
-                (
-                    self.detected_obstacles_xy,
-                    [[x, y]]
-                )
-            )
-           
+            self.spoofed_obstacles.pop(0)           
         return changed_vertices
     
     def compute_current_path(self):
@@ -233,12 +216,6 @@ class DStarLite:
         return True
     
     def main(self, start: Node_, goal: Node_, spoofed_ox: list, spoofed_oy: list):
-        # init_ox = [[],[],[],[1]]
-        # init_oy = [[],[],[],[1]]
-        # self.spoofed_obstacles = [[Node(x - self.x_min_world,
-        #                                 y - self.y_min_world)
-        #                           for x, y in zip(rowx, rowy)]
-        #                          for rowx, rowy in zip(init_ox, init_oy)]
         self.spoofed_obstacles = [[Node_(x - self.x_min_world,
                                         y - self.y_min_world)
                                   for x, y in zip(rowx, rowy)]
