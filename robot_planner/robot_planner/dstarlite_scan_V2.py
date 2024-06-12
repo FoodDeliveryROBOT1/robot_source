@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 from dstarlite.d_star_lite import *
 from dstarlite.cubic_spline_planner import *
 
-
 expansion_size = 3
 
 def euler_from_quaternion(x,y,z,w):
@@ -160,8 +159,6 @@ class Obstacle(Node):
             self.stage = 2
             print(self.stage)
         
-            
- 
     def move_callback(self):
         if  self.stage == 2 and self.ok == 1:
             if(self.sx != self.gx and self.sy != self.gy):
@@ -204,16 +201,13 @@ class Obstacle(Node):
                     py = ry[i]*self.resolution + self.origin_y
                     self.path_x.append(px), self.path_y.append(py)
                 print(self.path_x, self.path_y)
-                
                 self.sx = int((self.gx - self.origin_x)/self.resolution)
                 self.sy = int((self.gy - self.origin_y)/self.resolution)
                 # print(self.stage)
-               
                 self.stage = 3
 
     def path_callback(self):
         twist_msg = Twist()
-
         if self.stage == 0:
             twist_msg.linear.x = 0.0
             twist_msg.angular.z = 0.0
@@ -228,34 +222,12 @@ class Obstacle(Node):
                 pose.pose.position.y = self.path_y[i]
                 path_msg.poses.append(pose)
             self.path_pub.publish(path_msg)
-           
-            
-            
             if(abs(self.sx - self.path_x[len(self.path_x) - 1])) < 0.05 and abs(self.sy - self.path_y[len(self.path_y) - 1])< 0.05:
                 print("STOP")
                 print(self.mpc_flag)
                 self.flag = 0
                 self.stage = 1
                 self.ok = 0
-            
-      
-         
-                
-            
-
-    def timer_callback(self):
-        if self.stage == 4:
-            plt.cla()
-            plt.plot(self.ox, self.oy, 's')
-            plt.plot(self.x2, self.y2)
-            plt.grid(True)
-            plt.pause(0.001)
-            plt.show()
-            
-            self.stage = 0
-
-
-
 
 def main(args = None):
 
